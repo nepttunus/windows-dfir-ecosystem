@@ -13,6 +13,18 @@ parameters:
     default: Incident
   - name: MaxDays
     default: "14"
+  - name: IncludeBrowserArtefacts
+    type: bool
+    default: false
+  - name: IncludeMemory
+    type: bool
+    default: false
+  - name: IncludeYara
+    type: bool
+    default: false
+  - name: ZipSharePackage
+    type: bool
+    default: true
 
 tools:
   - name: dfir_collector_ps1
@@ -26,18 +38,31 @@ sources:
       LET tool <= SELECT FullPath, tempdir() AS TempDir
       FROM Artifact.Generic.Utils.FetchBinary(ToolName="dfir_collector_ps1")
 
+      LET browser_flag <= if(condition=IncludeBrowserArtefacts, then=["-IncludeBrowserArtefacts"], else=[])
+      LET memory_flag <= if(condition=IncludeMemory, then=["-IncludeMemory"], else=[])
+      LET yara_flag <= if(condition=IncludeYara, then=["-IncludeYara"], else=[])
+      LET share_flag <= if(condition=ZipSharePackage, then=["-ZipSharePackage"], else=[])
+
+      LET argv <= array(
+        a=[
+          "powershell.exe",
+          "-ExecutionPolicy", "Bypass",
+          "-File", tool[0].FullPath,
+          "-CaseId", CaseId,
+          "-OutputRoot", tool[0].TempDir,
+          "-Profile", Profile,
+          "-MaxDays", MaxDays
+        ],
+        b=browser_flag,
+        c=memory_flag,
+        d=yara_flag,
+        e=share_flag
+      )
+
       LET execution <=
         SELECT *
         FROM execve(
-          argv=[
-            "powershell.exe",
-            "-ExecutionPolicy", "Bypass",
-            "-File", tool[0].FullPath,
-            "-CaseId", CaseId,
-            "-OutputRoot", tool[0].TempDir,
-            "-Profile", Profile,
-            "-MaxDays", MaxDays
-          ],
+          argv=argv,
           length=100000
         )
 
