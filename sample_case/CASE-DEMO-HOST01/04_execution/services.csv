@@ -1,0 +1,2 @@
+Name,DisplayName,State,StartMode,PathName,ProcessId,StartName
+BadSvc,BadSvc,Running,Auto,C:\Users\Public\svc.exe,1234,LocalSystem

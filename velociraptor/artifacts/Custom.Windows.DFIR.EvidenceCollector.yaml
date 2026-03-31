@@ -1,0 +1,53 @@
+name: Custom.Windows.DFIR.EvidenceCollector
+description: |
+  Runs the Windows PowerShell DFIR evidence collector from this repository
+  and uploads the resulting case directory contents.
+
+  This artifact is intended for Windows triage and reporting workflows.
+type: CLIENT
+
+parameters:
+  - name: CaseId
+    default: CASE-TRIAGE
+  - name: Profile
+    default: Incident
+  - name: MaxDays
+    default: "14"
+
+tools:
+  - name: dfir_collector_ps1
+    url: https://raw.githubusercontent.com/nepttunus/windows-dfir-ecosystem/main/collector/windows/Invoke-DFIREvidenceCollector.ps1
+
+sources:
+  - precondition: |
+      SELECT * FROM info() WHERE OS = 'windows'
+
+    query: |
+      LET tool <= SELECT FullPath, tempdir() AS TempDir
+      FROM Artifact.Generic.Utils.FetchBinary(ToolName="dfir_collector_ps1")
+
+      LET execution <=
+        SELECT *
+        FROM execve(
+          argv=[
+            "powershell.exe",
+            "-ExecutionPolicy", "Bypass",
+            "-File", tool[0].FullPath,
+            "-CaseId", CaseId,
+            "-OutputRoot", tool[0].TempDir,
+            "-Profile", Profile,
+            "-MaxDays", MaxDays
+          ],
+          length=100000
+        )
+
+      LET uploads <=
+        SELECT
+          FullPath,
+          upload(file=FullPath) AS Upload
+        FROM glob(globs="**", root=tool[0].TempDir)
+
+      SELECT * FROM chain(
+        a={ SELECT * FROM execution },
+        b={ SELECT * FROM uploads }
+      )

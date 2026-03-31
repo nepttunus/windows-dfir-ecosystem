@@ -1,0 +1,2 @@
+Hive,RegistryPath,ValueName,ValueData
+HKCU,HKCU:\Software\Microsoft\Windows\CurrentVersion\Run,OneDrive2,C:\Users\Public\updater.exe

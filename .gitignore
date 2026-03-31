@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+dist/
+build/
+*.zip
+*.log
+playwright-report/
+test-results/
+output/
+case-output/

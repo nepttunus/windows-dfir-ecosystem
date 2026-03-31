@@ -1,0 +1,2 @@
+TaskName,TaskPath,State,Author,Description,Actions,Triggers
+Updater,\,Ready,User,,powershell.exe -enc SQBFAFgA,At logon
