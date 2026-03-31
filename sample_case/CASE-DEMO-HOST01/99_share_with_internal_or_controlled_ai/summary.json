@@ -1,0 +1,87 @@
+{
+  "case_id": "CASE-DEMO-HOST01",
+  "hostname": "HOST01",
+  "profile": "Incident",
+  "collected_at_utc": "2026-03-31T21:00:00Z",
+  "findings_count": 7,
+  "timeline_count": 13,
+  "top_findings": [
+    {
+      "severity": "high",
+      "title": "Microsoft Defender detections present",
+      "description": "The endpoint reported active or historical Defender detections. Review remediation state, affected paths, and related execution/persistence artefacts.",
+      "evidence": [
+        "HackTool:Win32/Mimikatz: C:\\Temp\\mimi.exe"
+      ],
+      "score": 95,
+      "category": "detection",
+      "confidence": "high"
+    },
+    {
+      "severity": "high",
+      "title": "Probable compromise indicators cluster",
+      "description": "Multiple findings across detection, persistence, and/or network activity suggest elevated compromise likelihood and warrant analyst escalation.",
+      "evidence": [
+        "indicator_count=5"
+      ],
+      "score": 92,
+      "category": "correlation",
+      "confidence": "high"
+    },
+    {
+      "severity": "high",
+      "title": "Scheduled task with encoded PowerShell",
+      "description": "Scheduled task \\Updater contains an encoded PowerShell style action.",
+      "evidence": [
+        "powershell.exe -enc SQBFAFgA"
+      ],
+      "score": 90,
+      "category": "persistence",
+      "confidence": "high"
+    },
+    {
+      "severity": "medium",
+      "title": "Potentially suspicious listener ports observed",
+      "description": "The collector identified listeners on ports commonly associated with implants, backdoors, or operator tooling.",
+      "evidence": [
+        "0.0.0.0:31337 pid=1234"
+      ],
+      "score": 78,
+      "category": "network",
+      "confidence": "medium"
+    },
+    {
+      "severity": "medium",
+      "title": "Run key points to suspicious path",
+      "description": "A Run/RunOnce persistence entry points to a suspicious or user-writable location.",
+      "evidence": [
+        "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run => C:\\Users\\Public\\updater.exe"
+      ],
+      "score": 72,
+      "category": "persistence",
+      "confidence": "medium"
+    },
+    {
+      "severity": "medium",
+      "title": "Service executable path looks suspicious",
+      "description": "Service BadSvc points to a user-writable or suspicious location.",
+      "evidence": [
+        "C:\\Users\\Public\\svc.exe"
+      ],
+      "score": 68,
+      "category": "persistence",
+      "confidence": "medium"
+    },
+    {
+      "severity": "low",
+      "title": "Non-standard TCP listeners identified",
+      "description": "The collector identified TCP listeners outside a small common-port allowlist. This is not necessarily malicious but may require analyst review.",
+      "evidence": [
+        "0.0.0.0:31337 pid=1234"
+      ],
+      "score": 45,
+      "category": "network",
+      "confidence": "low"
+    }
+  ]
+}

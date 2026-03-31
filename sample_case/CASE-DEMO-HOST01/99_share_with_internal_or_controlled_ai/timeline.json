@@ -1,0 +1,106 @@
+[
+  {
+    "TimestampUtc": "2026-03-31T19:00:00Z",
+    "Source": "defender",
+    "Category": "detection",
+    "Severity": "high",
+    "Summary": "Microsoft Defender detection: HackTool:Win32/Mimikatz",
+    "Details": "C:\\Temp\\mimi.exe"
+  },
+  {
+    "TimestampUtc": "2026-03-31T20:00:00Z",
+    "Source": "tcp_listener",
+    "Category": "network",
+    "Severity": "low",
+    "Summary": "TCP listener observed on 0.0.0.0:31337",
+    "Details": "pid=1234"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "detection",
+    "Severity": "high",
+    "Summary": "Microsoft Defender detections present",
+    "Details": "HackTool:Win32/Mimikatz: C:\\Temp\\mimi.exe"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "correlation",
+    "Severity": "high",
+    "Summary": "Probable compromise indicators cluster",
+    "Details": "indicator_count=5"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "persistence",
+    "Severity": "high",
+    "Summary": "Scheduled task with encoded PowerShell",
+    "Details": "powershell.exe -enc SQBFAFgA"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "collector",
+    "Category": "collection",
+    "Severity": "low",
+    "Summary": "Case collection completed",
+    "Details": "CaseId=CASE-DEMO-HOST01 Hostname=HOST01 Profile=Incident"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "service",
+    "Category": "execution",
+    "Severity": "low",
+    "Summary": "Service observed: BadSvc (Running)",
+    "Details": "C:\\Users\\Public\\svc.exe"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "network",
+    "Severity": "low",
+    "Summary": "Non-standard TCP listeners identified",
+    "Details": "0.0.0.0:31337 pid=1234"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "scheduled_task",
+    "Category": "persistence",
+    "Severity": "medium",
+    "Summary": "Scheduled task observed: \\Updater",
+    "Details": "powershell.exe -enc SQBFAFgA"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "run_key",
+    "Category": "persistence",
+    "Severity": "medium",
+    "Summary": "Run key persistence entry observed",
+    "Details": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run => C:\\Users\\Public\\updater.exe"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "network",
+    "Severity": "medium",
+    "Summary": "Potentially suspicious listener ports observed",
+    "Details": "0.0.0.0:31337 pid=1234"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "persistence",
+    "Severity": "medium",
+    "Summary": "Run key points to suspicious path",
+    "Details": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run => C:\\Users\\Public\\updater.exe"
+  },
+  {
+    "TimestampUtc": "2026-03-31T21:00:00Z",
+    "Source": "findings_engine",
+    "Category": "persistence",
+    "Severity": "medium",
+    "Summary": "Service executable path looks suspicious",
+    "Details": "C:\\Users\\Public\\svc.exe"
+  }
+]

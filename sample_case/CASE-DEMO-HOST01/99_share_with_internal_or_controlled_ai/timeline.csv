@@ -1,0 +1,14 @@
+TimestampUtc,Source,Category,Severity,Summary,Details
+2026-03-31T19:00:00Z,defender,detection,high,Microsoft Defender detection: HackTool:Win32/Mimikatz,C:\Temp\mimi.exe
+2026-03-31T20:00:00Z,tcp_listener,network,low,TCP listener observed on 0.0.0.0:31337,pid=1234
+2026-03-31T21:00:00Z,findings_engine,detection,high,Microsoft Defender detections present,HackTool:Win32/Mimikatz: C:\Temp\mimi.exe
+2026-03-31T21:00:00Z,findings_engine,correlation,high,Probable compromise indicators cluster,indicator_count=5
+2026-03-31T21:00:00Z,findings_engine,persistence,high,Scheduled task with encoded PowerShell,powershell.exe -enc SQBFAFgA
+2026-03-31T21:00:00Z,collector,collection,low,Case collection completed,CaseId=CASE-DEMO-HOST01 Hostname=HOST01 Profile=Incident
+2026-03-31T21:00:00Z,service,execution,low,Service observed: BadSvc (Running),C:\Users\Public\svc.exe
+2026-03-31T21:00:00Z,findings_engine,network,low,Non-standard TCP listeners identified,0.0.0.0:31337 pid=1234
+2026-03-31T21:00:00Z,scheduled_task,persistence,medium,Scheduled task observed: \Updater,powershell.exe -enc SQBFAFgA
+2026-03-31T21:00:00Z,run_key,persistence,medium,Run key persistence entry observed,HKCU:\Software\Microsoft\Windows\CurrentVersion\Run => C:\Users\Public\updater.exe
+2026-03-31T21:00:00Z,findings_engine,network,medium,Potentially suspicious listener ports observed,0.0.0.0:31337 pid=1234
+2026-03-31T21:00:00Z,findings_engine,persistence,medium,Run key points to suspicious path,HKCU:\Software\Microsoft\Windows\CurrentVersion\Run => C:\Users\Public\updater.exe
+2026-03-31T21:00:00Z,findings_engine,persistence,medium,Service executable path looks suspicious,C:\Users\Public\svc.exe

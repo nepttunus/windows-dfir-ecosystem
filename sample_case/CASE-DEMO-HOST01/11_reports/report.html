@@ -1,26 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>CASE-DEMO-HOST01 - DFIR Report</title>
+  <meta charset="utf-8">
+  <title>DFIR Triage Report - CASE-DEMO-HOST01</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 32px; color: #111; }
-    h1, h2, h3 { margin-bottom: 8px; }
-    .meta { margin-bottom: 24px; }
-    .section { margin-top: 28px; page-break-inside: avoid; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-    .sev-high { border-left: 8px solid #a00; }
-    .sev-medium { border-left: 8px solid #c96a00; }
-    .sev-low { border-left: 8px solid #5078a0; }
-    table { border-collapse: collapse; width: 100%; font-size: 13px; }
-    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
-    th { background: #f5f5f5; }
-    pre { background: #f7f7f7; padding: 12px; white-space: pre-wrap; border-radius: 6px; }
-    .small { font-size: 12px; color: #555; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 24px;
+      color: #1f2937;
+      line-height: 1.45;
+    }
+    h1, h2, h3 {
+      color: #111827;
+    }
+    .meta {
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: #f9fafb;
+    }
+    .finding {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+    .severity-high {
+      border-left: 6px solid #b91c1c;
+    }
+    .severity-medium {
+      border-left: 6px solid #d97706;
+    }
+    .severity-low {
+      border-left: 6px solid #2563eb;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+      table-layout: fixed;
+      word-wrap: break-word;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f3f4f6;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .muted {
+      color: #6b7280;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      margin-right: 6px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
   <h1>DFIR Triage Report</h1>
+
   <div class="meta">
     <div><strong>Case ID:</strong> CASE-DEMO-HOST01</div>
     <div><strong>Hostname:</strong> HOST01</div>
@@ -28,7 +82,7 @@
     <div><strong>Collected At (UTC):</strong> 2026-03-31T21:00:00Z</div>
   </div>
 
-  <div id="executive-summary" class="section">
+  <section id="executive-summary">
     <h2>Executive Summary</h2>
     <pre># Executive Summary — CASE-DEMO-HOST01
 
@@ -40,196 +94,465 @@
 - TCP listeners collected: **1**
 - Highest finding severity: **HIGH**
 
+## Finding distribution
+
+- High: **3**
+- Medium: **3**
+- Low: **1**
+
+## Top categories
+
+- **persistence**: 3
+- **network**: 2
+- **detection**: 1
+- **correlation**: 1
+
 ## Key findings
 
 - **HIGH** — Microsoft Defender detections present: The endpoint reported active or historical Defender detections. Review remediation state, affected paths, and related execution/persistence artefacts.
+- **HIGH** — Probable compromise indicators cluster: Multiple findings across detection, persistence, and/or network activity suggest elevated compromise likelihood and warrant analyst escalation.
 - **HIGH** — Scheduled task with encoded PowerShell: Scheduled task \Updater contains an encoded PowerShell style action.
+- **MEDIUM** — Potentially suspicious listener ports observed: The collector identified listeners on ports commonly associated with implants, backdoors, or operator tooling.
+- **MEDIUM** — Run key points to suspicious path: A Run/RunOnce persistence entry points to a suspicious or user-writable location.
+- **MEDIUM** — Service executable path looks suspicious: Service BadSvc points to a user-writable or suspicious location.
 - **LOW** — Non-standard TCP listeners identified: The collector identified TCP listeners outside a small common-port allowlist. This is not necessarily malicious but may require analyst review.
 
 ## Analyst note
 
-This report is based on triage artefacts and simple heuristics. It supports, but does not replace, detailed forensic examination.</pre>
-  </div>
+This report is based on triage artefacts and heuristic detections. It supports, but does not replace, detailed forensic examination.</pre>
+  </section>
 
-  <div id="findings" class="section">
+  <section id="findings">
     <h2>Findings</h2>
     
       
-        <div class="card sev-high">
-          <h3>HIGH — Microsoft Defender detections present</h3>
-          <p>The endpoint reported active or historical Defender detections. Review remediation state, affected paths, and related execution/persistence artefacts.</p>
+      <div class="finding severity-high">
+        <h3>HIGH — Microsoft Defender detections present</h3>
+        <p>The endpoint reported active or historical Defender detections. Review remediation state, affected paths, and related execution/persistence artefacts.</p>
+        <p>
+          <span class="pill">category: detection</span>
+          <span class="pill">score: 95</span>
+          <span class="pill">confidence: high</span>
+        </p>
+        
+        <ul>
           
-          <ul>
-            
-            <li>HackTool:Win32/Mimikatz: C:\Temp\mimi.exe</li>
-            
-          </ul>
+          <li>HackTool:Win32/Mimikatz: C:\Temp\mimi.exe</li>
           
-        </div>
+        </ul>
+        
+      </div>
       
-        <div class="card sev-high">
-          <h3>HIGH — Scheduled task with encoded PowerShell</h3>
-          <p>Scheduled task \Updater contains an encoded PowerShell style action.</p>
+      <div class="finding severity-high">
+        <h3>HIGH — Probable compromise indicators cluster</h3>
+        <p>Multiple findings across detection, persistence, and/or network activity suggest elevated compromise likelihood and warrant analyst escalation.</p>
+        <p>
+          <span class="pill">category: correlation</span>
+          <span class="pill">score: 92</span>
+          <span class="pill">confidence: high</span>
+        </p>
+        
+        <ul>
           
-          <ul>
-            
-            <li>powershell.exe -enc SQBFAFgA</li>
-            
-          </ul>
+          <li>indicator_count=5</li>
           
-        </div>
+        </ul>
+        
+      </div>
       
-        <div class="card sev-low">
-          <h3>LOW — Non-standard TCP listeners identified</h3>
-          <p>The collector identified TCP listeners outside a small common-port allowlist. This is not necessarily malicious but may require analyst review.</p>
+      <div class="finding severity-high">
+        <h3>HIGH — Scheduled task with encoded PowerShell</h3>
+        <p>Scheduled task \Updater contains an encoded PowerShell style action.</p>
+        <p>
+          <span class="pill">category: persistence</span>
+          <span class="pill">score: 90</span>
+          <span class="pill">confidence: high</span>
+        </p>
+        
+        <ul>
           
-          <ul>
-            
-            <li>0.0.0.0:31337 pid=1234</li>
-            
-          </ul>
+          <li>powershell.exe -enc SQBFAFgA</li>
           
-        </div>
+        </ul>
+        
+      </div>
+      
+      <div class="finding severity-medium">
+        <h3>MEDIUM — Potentially suspicious listener ports observed</h3>
+        <p>The collector identified listeners on ports commonly associated with implants, backdoors, or operator tooling.</p>
+        <p>
+          <span class="pill">category: network</span>
+          <span class="pill">score: 78</span>
+          <span class="pill">confidence: medium</span>
+        </p>
+        
+        <ul>
+          
+          <li>0.0.0.0:31337 pid=1234</li>
+          
+        </ul>
+        
+      </div>
+      
+      <div class="finding severity-medium">
+        <h3>MEDIUM — Run key points to suspicious path</h3>
+        <p>A Run/RunOnce persistence entry points to a suspicious or user-writable location.</p>
+        <p>
+          <span class="pill">category: persistence</span>
+          <span class="pill">score: 72</span>
+          <span class="pill">confidence: medium</span>
+        </p>
+        
+        <ul>
+          
+          <li>HKCU:\Software\Microsoft\Windows\CurrentVersion\Run => C:\Users\Public\updater.exe</li>
+          
+        </ul>
+        
+      </div>
+      
+      <div class="finding severity-medium">
+        <h3>MEDIUM — Service executable path looks suspicious</h3>
+        <p>Service BadSvc points to a user-writable or suspicious location.</p>
+        <p>
+          <span class="pill">category: persistence</span>
+          <span class="pill">score: 68</span>
+          <span class="pill">confidence: medium</span>
+        </p>
+        
+        <ul>
+          
+          <li>C:\Users\Public\svc.exe</li>
+          
+        </ul>
+        
+      </div>
+      
+      <div class="finding severity-low">
+        <h3>LOW — Non-standard TCP listeners identified</h3>
+        <p>The collector identified TCP listeners outside a small common-port allowlist. This is not necessarily malicious but may require analyst review.</p>
+        <p>
+          <span class="pill">category: network</span>
+          <span class="pill">score: 45</span>
+          <span class="pill">confidence: low</span>
+        </p>
+        
+        <ul>
+          
+          <li>0.0.0.0:31337 pid=1234</li>
+          
+        </ul>
+        
+      </div>
       
     
-  </div>
+  </section>
 
-  <div id="system" class="section">
+  <section id="system-context">
     <h2>System Context</h2>
-    <div class="card">
-      <table>
-        <tbody>
-          
-          <tr><th>CaseId</th><td>CASE-DEMO-HOST01</td></tr>
-          
-          <tr><th>Hostname</th><td>HOST01</td></tr>
-          
-          <tr><th>Profile</th><td>Incident</td></tr>
-          
-          <tr><th>CollectedAtUtc</th><td>2026-03-31T21:00:00Z</td></tr>
-          
-        </tbody>
-      </table>
-    </div>
-  </div>
+    <table>
+      <tbody>
+        
+        <tr>
+          <th>CaseId</th>
+          <td>CASE-DEMO-HOST01</td>
+        </tr>
+        
+        <tr>
+          <th>Hostname</th>
+          <td>HOST01</td>
+        </tr>
+        
+        <tr>
+          <th>Profile</th>
+          <td>Incident</td>
+        </tr>
+        
+        <tr>
+          <th>CollectedAtUtc</th>
+          <td>2026-03-31T21:00:00Z</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
 
-  <div id="defender" class="section">
+  <section id="defender">
     <h2>Microsoft Defender</h2>
-    <div class="card">
-      <h3>Status</h3>
-      <table>
-        <tbody>
-          
-          <tr><th>RealTimeProtectionEnabled</th><td>True</td></tr>
-          
-          <tr><th>AntivirusSignatureAge</th><td>1</td></tr>
-          
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Detections</h3>
-      
-      <table>
-        <thead>
-          <tr>
-            <th>Threat</th>
-            <th>Resources / Path</th>
-            <th>Detection Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>HackTool:Win32/Mimikatz</td>
-            <td>C:\Temp\mimi.exe</td>
-            <td>2026-03-31T19:00:00Z</td>
-          </tr>
-          
-        </tbody>
-      </table>
-      
-    </div>
-  </div>
+    <h3>Status</h3>
+    <table>
+      <tbody>
+        
+        <tr>
+          <th>RealTimeProtectionEnabled</th>
+          <td>True</td>
+        </tr>
+        
+        <tr>
+          <th>AntivirusSignatureAge</th>
+          <td>1</td>
+        </tr>
+        
+      </tbody>
+    </table>
 
-  <div id="persistence" class="section">
+    <h3>Detections</h3>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Threat</th>
+          <th>Resources / Path</th>
+          <th>Detection Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>HackTool:Win32/Mimikatz</td>
+          <td>C:\Temp\mimi.exe</td>
+          <td>2026-03-31T19:00:00Z</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </section>
+
+  <section id="persistence">
     <h2>Persistence Review</h2>
-    <div class="card">
-      <h3>Scheduled Tasks</h3>
-      <table>
-        <thead>
-          <tr><th>Task</th><th>State</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>\Updater</td>
-            <td>Ready</td>
-            <td>powershell.exe -enc SQBFAFgA</td>
-          </tr>
-          
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Run Keys</h3>
-      <table>
-        <thead>
-          <tr><th>Hive</th><th>Registry Path</th><th>Value Name</th><th>Value Data</th></tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>HKCU</td>
-            <td>HKCU:\Software\Microsoft\Windows\CurrentVersion\Run</td>
-            <td>OneDrive2</td>
-            <td>C:\Users\Public\updater.exe</td>
-          </tr>
-          
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Services</h3>
-      <table>
-        <thead>
-          <tr><th>Name</th><th>State</th><th>Start Mode</th><th>Path</th></tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>BadSvc</td>
-            <td>Running</td>
-            <td>Auto</td>
-            <td>C:\Users\Public\svc.exe</td>
-          </tr>
-          
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <div id="network" class="section">
+    <h3>Scheduled Tasks</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>State</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>\Updater</td>
+          <td>Ready</td>
+          <td>powershell.exe -enc SQBFAFgA</td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <h3>Run Keys</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Hive</th>
+          <th>Registry Path</th>
+          <th>Value Name</th>
+          <th>Value Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>HKCU</td>
+          <td>HKCU:\Software\Microsoft\Windows\CurrentVersion\Run</td>
+          <td>OneDrive2</td>
+          <td>C:\Users\Public\updater.exe</td>
+        </tr>
+        
+      </tbody>
+    </table>
+
+    <h3>Services</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>State</th>
+          <th>Start Mode</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>BadSvc</td>
+          <td>Running</td>
+          <td>Auto</td>
+          <td>C:\Users\Public\svc.exe</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+
+  <section id="network">
     <h2>Network Review</h2>
-    <div class="card">
-      <h3>TCP Listeners</h3>
-      <table>
-        <thead>
-          <tr><th>Local Address</th><th>Local Port</th><th>Owning PID</th><th>Creation Time</th></tr>
-        </thead>
-        <tbody>
-          
-          <tr>
-            <td>0.0.0.0</td>
-            <td>31337</td>
-            <td>1234</td>
-            <td>2026-03-31T20:00:00Z</td>
-          </tr>
-          
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <p class="small">Generated by windows-dfir-evidence-ecosystem.</p>
+    <h3>TCP Listeners</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Local Address</th>
+          <th>Local Port</th>
+          <th>Owning PID</th>
+          <th>Creation Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>0.0.0.0</td>
+          <td>31337</td>
+          <td>1234</td>
+          <td>2026-03-31T20:00:00Z</td>
+        </tr>
+        
+      </tbody>
+    </table>
+  </section>
+
+  <section id="timeline">
+    <h2>Consolidated Timeline</h2>
+    <p><strong>Total rows:</strong> 13</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>TimestampUtc</th>
+          <th>Source</th>
+          <th>Category</th>
+          <th>Severity</th>
+          <th>Summary</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td>2026-03-31T19:00:00Z</td>
+          <td>defender</td>
+          <td>detection</td>
+          <td>high</td>
+          <td>Microsoft Defender detection: HackTool:Win32/Mimikatz</td>
+          <td>C:\Temp\mimi.exe</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T20:00:00Z</td>
+          <td>tcp_listener</td>
+          <td>network</td>
+          <td>low</td>
+          <td>TCP listener observed on 0.0.0.0:31337</td>
+          <td>pid=1234</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>detection</td>
+          <td>high</td>
+          <td>Microsoft Defender detections present</td>
+          <td>HackTool:Win32/Mimikatz: C:\Temp\mimi.exe</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>correlation</td>
+          <td>high</td>
+          <td>Probable compromise indicators cluster</td>
+          <td>indicator_count=5</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>persistence</td>
+          <td>high</td>
+          <td>Scheduled task with encoded PowerShell</td>
+          <td>powershell.exe -enc SQBFAFgA</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>collector</td>
+          <td>collection</td>
+          <td>low</td>
+          <td>Case collection completed</td>
+          <td>CaseId=CASE-DEMO-HOST01 Hostname=HOST01 Profile=Incident</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>service</td>
+          <td>execution</td>
+          <td>low</td>
+          <td>Service observed: BadSvc (Running)</td>
+          <td>C:\Users\Public\svc.exe</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>network</td>
+          <td>low</td>
+          <td>Non-standard TCP listeners identified</td>
+          <td>0.0.0.0:31337 pid=1234</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>scheduled_task</td>
+          <td>persistence</td>
+          <td>medium</td>
+          <td>Scheduled task observed: \Updater</td>
+          <td>powershell.exe -enc SQBFAFgA</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>run_key</td>
+          <td>persistence</td>
+          <td>medium</td>
+          <td>Run key persistence entry observed</td>
+          <td>HKCU:\Software\Microsoft\Windows\CurrentVersion\Run => C:\Users\Public\updater.exe</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>network</td>
+          <td>medium</td>
+          <td>Potentially suspicious listener ports observed</td>
+          <td>0.0.0.0:31337 pid=1234</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>persistence</td>
+          <td>medium</td>
+          <td>Run key points to suspicious path</td>
+          <td>HKCU:\Software\Microsoft\Windows\CurrentVersion\Run => C:\Users\Public\updater.exe</td>
+        </tr>
+        
+        <tr>
+          <td>2026-03-31T21:00:00Z</td>
+          <td>findings_engine</td>
+          <td>persistence</td>
+          <td>medium</td>
+          <td>Service executable path looks suspicious</td>
+          <td>C:\Users\Public\svc.exe</td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </section>
+
+  <footer>
+    <p class="muted">Generated by windows-dfir-ecosystem.</p>
+  </footer>
 </body>
 </html>
