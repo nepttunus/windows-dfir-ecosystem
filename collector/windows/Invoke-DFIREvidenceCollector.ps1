@@ -11,7 +11,11 @@ param(
 
     [int]$MaxDays = 14,
 
-    [switch]$NoZip
+    [switch]$NoZip,
+    [switch]$IncludeBrowserArtefacts,
+    [switch]$IncludeMemory,
+    [switch]$IncludeYara,
+    [switch]$ZipSharePackage
 )
 
 Set-StrictMode -Version Latest
@@ -85,7 +89,7 @@ function Copy-IfExists {
         if (Test-Path -LiteralPath $Source) {
             $destDir = Split-Path -Path $Destination -Parent
             New-SafeDirectory -Path $destDir
-            Copy-Item -LiteralPath $Source -Destination $Destination -Force -ErrorAction Stop
+            Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force -ErrorAction Stop
         }
     }
     catch {
@@ -205,9 +209,9 @@ function Get-WmiSubscriptionsFlat {
     $bindings = Get-CimInstance -Namespace root/subscription -ClassName __FilterToConsumerBinding -ErrorAction SilentlyContinue
 
     [pscustomobject]@{
-        Filters = $filters
+        Filters   = $filters
         Consumers = $consumers
-        Bindings = $bindings
+        Bindings  = $bindings
     }
 }
 
@@ -237,17 +241,17 @@ function Get-LocalGroupMembersFlat {
         try {
             Get-LocalGroupMember -Group $group.Name -ErrorAction Stop | ForEach-Object {
                 [pscustomobject]@{
-                    GroupName = $group.Name
-                    MemberName = $_.Name
-                    ObjectClass = $_.ObjectClass
+                    GroupName       = $group.Name
+                    MemberName      = $_.Name
+                    ObjectClass     = $_.ObjectClass
                     PrincipalSource = $_.PrincipalSource
                 }
             }
         } catch {
             [pscustomobject]@{
-                GroupName = $group.Name
-                MemberName = "<error>"
-                ObjectClass = ""
+                GroupName       = $group.Name
+                MemberName      = "<error>"
+                ObjectClass     = ""
                 PrincipalSource = ""
             }
         }
@@ -282,6 +286,12 @@ function Get-DefenderPreferencesSafe {
     }
 }
 
+function Get-UserProfileDirectories {
+    Get-ChildItem "C:\Users" -Directory -ErrorAction SilentlyContinue | Where-Object {
+        $_.Name -notin @("All Users", "Default", "Default User", "Public", "defaultuser0")
+    }
+}
+
 $CaseDir = Join-Path $OutputRoot $CaseId
 $DirCase = Join-Path $CaseDir "00_case"
 $DirSystem = Join-Path $CaseDir "01_system"
@@ -295,12 +305,24 @@ $DirTimeline = Join-Path $CaseDir "08_timeline"
 $DirFindings = Join-Path $CaseDir "09_findings"
 $DirScreens = Join-Path $CaseDir "10_screenshots"
 $DirReports = Join-Path $CaseDir "11_reports"
-$DirShare = Join-Path $CaseDir "99_share_with_chatgpt"
+$DirMemory = Join-Path $CaseDir "12_memory"
+$DirShare = Join-Path $CaseDir "99_share_with_internal_or_controlled_ai"
+
+$DirUsb = Join-Path $DirSystem "usb"
+$DirPrefetch = Join-Path $DirUser "prefetch"
+$DirRecent = Join-Path $DirUser "recent"
+$DirLnk = Join-Path $DirUser "lnk"
+$DirJumpLists = Join-Path $DirUser "jumplists"
+$DirBrowser = Join-Path $DirUser "browser"
+$DirAmcache = Join-Path $DirTimeline "amcache"
+$DirSrum = Join-Path $DirTimeline "srum"
 
 @(
     $OutputRoot, $CaseDir, $DirCase, $DirSystem, $DirLogs, $DirPersistence,
     $DirExecution, $DirNetwork, $DirUser, $DirSecurity, $DirTimeline,
-    $DirFindings, $DirScreens, $DirReports, $DirShare
+    $DirFindings, $DirScreens, $DirReports, $DirMemory, $DirShare,
+    $DirUsb, $DirPrefetch, $DirRecent, $DirLnk, $DirJumpLists,
+    $DirBrowser, $DirAmcache, $DirSrum
 ) | ForEach-Object { New-SafeDirectory -Path $_ }
 
 $caseMetadata = [ordered]@{
@@ -314,6 +336,10 @@ $caseMetadata = [ordered]@{
     Domain = $env:USERDOMAIN
     PowerShellVersion = $PSVersionTable.PSVersion.ToString()
     IsAdmin = ([bool](([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)))
+    IncludeBrowserArtefacts = [bool]$IncludeBrowserArtefacts
+    IncludeMemory = [bool]$IncludeMemory
+    IncludeYara = [bool]$IncludeYara
+    ZipSharePackage = [bool]$ZipSharePackage
 }
 
 Write-JsonFile -Path (Join-Path $DirCase "case_metadata.json") -Object $caseMetadata
@@ -377,43 +403,54 @@ foreach ($log in $logs) {
     Export-LogIfExists -LogName $log -Destination (Join-Path $DirLogs ($safeName + ".evtx"))
 }
 
-# User activity
-Copy-GlobSafe -SourceGlob "$env:SystemRoot\Prefetch\*.pf" -DestinationDir (Join-Path $DirUser "prefetch") -Limit 300
-Copy-IfExists -Source "$env:SystemRoot\AppCompat\Programs\Amcache.hve" -Destination (Join-Path $DirUser "Amcache.hve")
+# Richer user / forensic artefacts
+Copy-GlobSafe -SourceGlob "$env:SystemRoot\Prefetch\*.pf" -DestinationDir $DirPrefetch -Limit 300
+Copy-IfExists -Source "$env:SystemRoot\AppCompat\Programs\Amcache.hve" -Destination (Join-Path $DirAmcache "Amcache.hve")
 try {
-    & esentutl.exe /y "$env:SystemRoot\System32\sru\SRUDB.dat" /d (Join-Path $DirUser "SRUDB.dat") | Out-Null
+    & esentutl.exe /y "$env:SystemRoot\System32\sru\SRUDB.dat" /d (Join-Path $DirSrum "SRUDB.dat") | Out-Null
 } catch {
-    $_ | Out-String | Out-File -LiteralPath (Join-Path $DirUser "SRUDB.dat.error.txt") -Encoding utf8
+    $_ | Out-String | Out-File -LiteralPath (Join-Path $DirSrum "SRUDB.dat.error.txt") -Encoding utf8
 }
 
-$recentRoots = @(
-    "$env:APPDATA\Microsoft\Windows\Recent",
-    "$env:APPDATA\Microsoft\Windows\Recent\AutomaticDestinations",
-    "$env:APPDATA\Microsoft\Windows\Recent\CustomDestinations"
-)
-foreach ($root in $recentRoots) {
-    if (Test-Path -LiteralPath $root) {
-        $target = Join-Path $DirUser ((Split-Path $root -Leaf) -replace " ", "_")
-        Copy-GlobSafe -SourceGlob (Join-Path $root "*") -DestinationDir $target -Limit 300
-    }
+try {
+    reg export "HKLM\SYSTEM\CurrentControlSet\Enum\USBSTOR" (Join-Path $DirUsb "USBSTOR.reg") /y | Out-Null
+} catch {
+    $_ | Out-String | Out-File -LiteralPath (Join-Path $DirUsb "USBSTOR.reg.error.txt") -Encoding utf8
 }
 
-$browserTargets = @(
-    "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\History",
-    "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cookies",
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\History",
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cookies",
-    "$env:APPDATA\Mozilla\Firefox\Profiles"
-)
-foreach ($target in $browserTargets) {
-    if (Test-Path -LiteralPath $target) {
-        if ((Get-Item -LiteralPath $target).PSIsContainer) {
-            $dest = Join-Path $DirUser ("browser_" + (Split-Path $target -Leaf))
-            Copy-Item -LiteralPath $target -Destination $dest -Recurse -Force -ErrorAction SilentlyContinue
-        } else {
-            $dest = Join-Path $DirUser ("browser_" + (Split-Path $target -Leaf))
-            Copy-IfExists -Source $target -Destination $dest
+try {
+    reg export "HKLM\SYSTEM\CurrentControlSet\Enum\USB" (Join-Path $DirUsb "USB.reg") /y | Out-Null
+} catch {
+    $_ | Out-String | Out-File -LiteralPath (Join-Path $DirUsb "USB.reg.error.txt") -Encoding utf8
+}
+
+try {
+    $usbStorObjects = Get-ChildItem "HKLM:\SYSTEM\CurrentControlSet\Enum\USBSTOR" -ErrorAction SilentlyContinue | ForEach-Object {
+        [pscustomobject]@{
+            DeviceKey = $_.PSChildName
+            Path = $_.Name
         }
+    }
+    Write-JsonFile -Path (Join-Path $DirUsb "usbstor.json") -Object $usbStorObjects
+} catch {
+    $_ | Out-String | Out-File -LiteralPath (Join-Path $DirUsb "usbstor.json.error.txt") -Encoding utf8
+}
+
+foreach ($ProfileDir in Get-UserProfileDirectories) {
+    $UserRoot = $ProfileDir.FullName
+    $UserName = $ProfileDir.Name
+
+    Copy-GlobSafe -SourceGlob (Join-Path $UserRoot "Desktop\*.lnk") -DestinationDir (Join-Path $DirLnk $UserName) -Limit 200
+    Copy-GlobSafe -SourceGlob (Join-Path $UserRoot "AppData\Roaming\Microsoft\Windows\Recent\*") -DestinationDir (Join-Path $DirRecent $UserName) -Limit 300
+    Copy-GlobSafe -SourceGlob (Join-Path $UserRoot "AppData\Roaming\Microsoft\Windows\Recent\AutomaticDestinations\*") -DestinationDir (Join-Path $DirJumpLists "$UserName\AutomaticDestinations") -Limit 300
+    Copy-GlobSafe -SourceGlob (Join-Path $UserRoot "AppData\Roaming\Microsoft\Windows\Recent\CustomDestinations\*") -DestinationDir (Join-Path $DirJumpLists "$UserName\CustomDestinations") -Limit 300
+
+    if ($IncludeBrowserArtefacts) {
+        Copy-IfExists -Source (Join-Path $UserRoot "AppData\Local\Google\Chrome\User Data\Default\History") -Destination (Join-Path $DirBrowser "$UserName\Chrome\History")
+        Copy-IfExists -Source (Join-Path $UserRoot "AppData\Local\Google\Chrome\User Data\Default\Cookies") -Destination (Join-Path $DirBrowser "$UserName\Chrome\Cookies")
+        Copy-IfExists -Source (Join-Path $UserRoot "AppData\Local\Microsoft\Edge\User Data\Default\History") -Destination (Join-Path $DirBrowser "$UserName\Edge\History")
+        Copy-IfExists -Source (Join-Path $UserRoot "AppData\Local\Microsoft\Edge\User Data\Default\Cookies") -Destination (Join-Path $DirBrowser "$UserName\Edge\Cookies")
+        Copy-IfExists -Source (Join-Path $UserRoot "AppData\Roaming\Mozilla\Firefox\Profiles") -Destination (Join-Path $DirBrowser "$UserName\Firefox\Profiles")
     }
 }
 
@@ -428,6 +465,23 @@ try {
     $_ | Out-String | Out-File -LiteralPath (Join-Path $DirTimeline "recent_files.error.txt") -Encoding utf8
 }
 
+# Optional placeholders for advanced mode
+if ($IncludeMemory) {
+    Write-JsonFile -Path (Join-Path $DirMemory "memory_collection_requested.json") -Object ([ordered]@{
+        requested = $true
+        status = "placeholder"
+        tool = "not_configured"
+    })
+}
+
+if ($IncludeYara) {
+    Write-JsonFile -Path (Join-Path $DirFindings "yara_requested.json") -Object ([ordered]@{
+        requested = $true
+        status = "placeholder"
+        rules = "not_configured"
+    })
+}
+
 # Summary
 $summary = [ordered]@{
     CaseId = $CaseId
@@ -440,6 +494,11 @@ $summary = [ordered]@{
     TcpListeners = ((Import-Csv -LiteralPath (Join-Path $DirNetwork "tcp_listeners.csv") -ErrorAction SilentlyContinue) | Measure-Object).Count
     DefenderDetections = @((Get-DefenderThreatsSafe)).Count
     LogsAttempted = $logs.Count
+    PrefetchFiles = (Get-ChildItem -LiteralPath $DirPrefetch -File -ErrorAction SilentlyContinue | Measure-Object).Count
+    LnkFiles = (Get-ChildItem -Path (Join-Path $DirLnk "*") -File -Recurse -ErrorAction SilentlyContinue | Measure-Object).Count
+    JumpListFiles = (Get-ChildItem -Path (Join-Path $DirJumpLists "*") -File -Recurse -ErrorAction SilentlyContinue | Measure-Object).Count
+    BrowserArtefacts = (Get-ChildItem -Path (Join-Path $DirBrowser "*") -File -Recurse -ErrorAction SilentlyContinue | Measure-Object).Count
+    UsbExports = (Get-ChildItem -LiteralPath $DirUsb -File -ErrorAction SilentlyContinue | Measure-Object).Count
 }
 Write-JsonFile -Path (Join-Path $DirCase "summary.json") -Object $summary
 
@@ -457,6 +516,14 @@ Get-ChildItem -LiteralPath $CaseDir -Recurse -File -ErrorAction SilentlyContinue
     }
 }
 $hashLines | Out-File -LiteralPath (Join-Path $DirCase "hashes.sha256") -Encoding ascii
+
+if ($ZipSharePackage) {
+    $shareZipPath = Join-Path $CaseDir ($CaseId + "-share-package.zip")
+    if (Test-Path -LiteralPath $shareZipPath) {
+        Remove-Item -LiteralPath $shareZipPath -Force
+    }
+    Compress-Archive -Path (Join-Path $DirShare "*") -DestinationPath $shareZipPath -CompressionLevel Optimal -Force
+}
 
 if (-not $NoZip) {
     $zipPath = Join-Path $OutputRoot ($CaseId + ".zip")

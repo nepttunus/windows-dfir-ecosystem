@@ -16,7 +16,7 @@ SEVERITY_ORDER = {"high": 3, "medium": 2, "low": 1}
 def ensure_dirs(case_path: Path) -> dict[str, Path]:
     reports = case_path / "11_reports"
     screenshots = case_path / "10_screenshots"
-    share = case_path / "99_share_with_chatgpt"
+    share = case_path / "99_share_with_internal_or_controlled_ai"
     reports.mkdir(parents=True, exist_ok=True)
     screenshots.mkdir(parents=True, exist_ok=True)
     share.mkdir(parents=True, exist_ok=True)
