@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -24,7 +25,7 @@ def ensure_dirs(case_path: Path) -> dict[str, Path]:
     return {"reports": reports, "screenshots": screenshots, "share": share}
 
 
-def render_html(case_path: Path, context: dict[str, Any], output_html: Path) -> None:
+def render_html(context: dict[str, Any], output_html: Path) -> None:
     template_dir = Path(__file__).parent / "templates"
     env = Environment(
         loader=FileSystemLoader(template_dir),
@@ -35,6 +36,7 @@ def render_html(case_path: Path, context: dict[str, Any], output_html: Path) -> 
 
 
 def write_json(path: Path, data: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
@@ -57,6 +59,7 @@ def render_screenshots_and_pdf(html_path: Path, screenshots_dir: Path, pdf_path:
             "persistence.png": "#persistence",
             "network.png": "#network",
             "defender.png": "#defender",
+            "timeline.png": "#timeline",
         }
         for filename, selector in selectors.items():
             try:
@@ -71,6 +74,18 @@ def render_screenshots_and_pdf(html_path: Path, screenshots_dir: Path, pdf_path:
                 print(f"[!] Could not render PDF: {exc}")
 
         browser.close()
+
+
+def create_share_zip(case_path: Path, share_dir: Path, case_id: str) -> Path:
+    zip_path = case_path / f"{case_id}-share-package.zip"
+    if zip_path.exists():
+        zip_path.unlink()
+
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for file_path in share_dir.rglob("*"):
+            if file_path.is_file():
+                archive.write(file_path, arcname=file_path.relative_to(share_dir.parent))
+    return zip_path
 
 
 def build_context(case_path: Path) -> dict[str, Any]:
@@ -108,6 +123,7 @@ def main() -> None:
     parser.add_argument("--case-path", required=True, help="Path to the collected case directory")
     parser.add_argument("--render-pdf", action="store_true", help="Render a PDF version using Playwright")
     parser.add_argument("--take-screenshots", action="store_true", help="Capture screenshots using Playwright")
+    parser.add_argument("--zip-share-package", action="store_true", help="Zip the reduced external analysis package")
     args = parser.parse_args()
 
     case_path = Path(args.case_path).resolve()
@@ -123,7 +139,7 @@ def main() -> None:
     findings_path.parent.mkdir(parents=True, exist_ok=True)
     summary_md_path = dirs["reports"] / "executive_summary.md"
 
-    render_html(case_path, context, html_path)
+    render_html(context, html_path)
     write_json(findings_path, context["findings"])
     summary_md_path.write_text(context["executive_summary_markdown"], encoding="utf-8")
 
@@ -152,6 +168,10 @@ def main() -> None:
             screenshots_dir=dirs["screenshots"],
             pdf_path=pdf_path,
         )
+
+    if args.zip_share_package:
+        zip_path = create_share_zip(case_path, dirs["share"], context["case_id"])
+        print(f"[+] Share package ZIP: {zip_path}")
 
     print(f"[+] HTML report: {html_path}")
     print(f"[+] Findings JSON: {findings_path}")

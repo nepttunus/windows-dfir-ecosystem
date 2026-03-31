@@ -1,26 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>{{ case_id }} - DFIR Report</title>
+  <meta charset="utf-8">
+  <title>DFIR Triage Report - {{ case_id }}</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; margin: 32px; color: #111; }
-    h1, h2, h3 { margin-bottom: 8px; }
-    .meta { margin-bottom: 24px; }
-    .section { margin-top: 28px; page-break-inside: avoid; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
-    .sev-high { border-left: 8px solid #a00; }
-    .sev-medium { border-left: 8px solid #c96a00; }
-    .sev-low { border-left: 8px solid #5078a0; }
-    table { border-collapse: collapse; width: 100%; font-size: 13px; }
-    th, td { border: 1px solid #ddd; padding: 6px; text-align: left; vertical-align: top; }
-    th { background: #f5f5f5; }
-    pre { background: #f7f7f7; padding: 12px; white-space: pre-wrap; border-radius: 6px; }
-    .small { font-size: 12px; color: #555; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 24px;
+      color: #1f2937;
+      line-height: 1.45;
+    }
+    h1, h2, h3 {
+      color: #111827;
+    }
+    .meta {
+      margin-bottom: 24px;
+      padding: 12px 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      background: #f9fafb;
+    }
+    .finding {
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+    .severity-high {
+      border-left: 6px solid #b91c1c;
+    }
+    .severity-medium {
+      border-left: 6px solid #d97706;
+    }
+    .severity-low {
+      border-left: 6px solid #2563eb;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 20px;
+      table-layout: fixed;
+      word-wrap: break-word;
+    }
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+      font-size: 14px;
+    }
+    th {
+      background: #f3f4f6;
+    }
+    pre {
+      white-space: pre-wrap;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .muted {
+      color: #6b7280;
+    }
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #d1d5db;
+      margin-right: 6px;
+      font-size: 12px;
+    }
   </style>
 </head>
 <body>
   <h1>DFIR Triage Report</h1>
+
   <div class="meta">
     <div><strong>Case ID:</strong> {{ case_id }}</div>
     <div><strong>Hostname:</strong> {{ hostname }}</div>
@@ -28,162 +82,218 @@
     <div><strong>Collected At (UTC):</strong> {{ collected_at_utc }}</div>
   </div>
 
-  <div id="executive-summary" class="section">
+  <section id="executive-summary">
     <h2>Executive Summary</h2>
     <pre>{{ executive_summary_markdown }}</pre>
-  </div>
+  </section>
 
-  <div id="findings" class="section">
+  <section id="findings">
     <h2>Findings</h2>
     {% if findings %}
       {% for finding in findings %}
-        <div class="card sev-{{ finding.severity }}">
-          <h3>{{ finding.severity|upper }} — {{ finding.title }}</h3>
-          <p>{{ finding.description }}</p>
-          {% if finding.evidence %}
-          <ul>
-            {% for item in finding.evidence %}
-            <li>{{ item }}</li>
-            {% endfor %}
-          </ul>
-          {% endif %}
-        </div>
+      <div class="finding severity-{{ finding.severity }}">
+        <h3>{{ finding.severity|upper }} — {{ finding.title }}</h3>
+        <p>{{ finding.description }}</p>
+        <p>
+          <span class="pill">category: {{ finding.category }}</span>
+          <span class="pill">score: {{ finding.score }}</span>
+          <span class="pill">confidence: {{ finding.confidence }}</span>
+        </p>
+        {% if finding.evidence %}
+        <ul>
+          {% for item in finding.evidence %}
+          <li>{{ item }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
       {% endfor %}
     {% else %}
-      <div class="card">No heuristic findings were generated.</div>
+      <p class="muted">No findings were generated.</p>
     {% endif %}
-  </div>
+  </section>
 
-  <div id="system" class="section">
+  <section id="system-context">
     <h2>System Context</h2>
-    <div class="card">
-      <table>
-        <tbody>
-          {% for key, value in summary.items() %}
-          <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+    <table>
+      <tbody>
+        {% for key, value in summary.items() %}
+        <tr>
+          <th>{{ key }}</th>
+          <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
 
-  <div id="defender" class="section">
+  <section id="defender">
     <h2>Microsoft Defender</h2>
-    <div class="card">
-      <h3>Status</h3>
-      <table>
-        <tbody>
-          {% for key, value in defender_status.items() %}
-          <tr><th>{{ key }}</th><td>{{ value }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Detections</h3>
-      {% if defender_threats %}
-      <table>
-        <thead>
-          <tr>
-            <th>Threat</th>
-            <th>Resources / Path</th>
-            <th>Detection Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in defender_threats %}
-          <tr>
-            <td>{{ item.get("ThreatName") or item.get("ThreatID") }}</td>
-            <td>{{ item.get("Resources") or item.get("Path") }}</td>
-            <td>{{ item.get("InitialDetectionTime") }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <p>No Defender detections were parsed from the collected JSON.</p>
-      {% endif %}
-    </div>
-  </div>
+    <h3>Status</h3>
+    <table>
+      <tbody>
+        {% for key, value in defender_status.items() %}
+        <tr>
+          <th>{{ key }}</th>
+          <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-  <div id="persistence" class="section">
+    <h3>Detections</h3>
+    {% if defender_threats %}
+    <table>
+      <thead>
+        <tr>
+          <th>Threat</th>
+          <th>Resources / Path</th>
+          <th>Detection Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in defender_threats %}
+        <tr>
+          <td>{{ item.ThreatName or item.ThreatID or '' }}</td>
+          <td>{{ item.Resources or item.Path or '' }}</td>
+          <td>{{ item.InitialDetectionTime or item.LastThreatStatusChangeTime or '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="muted">No Defender detections returned.</p>
+    {% endif %}
+  </section>
+
+  <section id="persistence">
     <h2>Persistence Review</h2>
-    <div class="card">
-      <h3>Scheduled Tasks</h3>
-      <table>
-        <thead>
-          <tr><th>Task</th><th>State</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-          {% for row in tasks[:100] %}
-          <tr>
-            <td>{{ row.get("TaskPath", "") }}{{ row.get("TaskName", "") }}</td>
-            <td>{{ row.get("State", "") }}</td>
-            <td>{{ row.get("Actions", "") }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Run Keys</h3>
-      <table>
-        <thead>
-          <tr><th>Hive</th><th>Registry Path</th><th>Value Name</th><th>Value Data</th></tr>
-        </thead>
-        <tbody>
-          {% for row in run_keys[:100] %}
-          <tr>
-            <td>{{ row.get("Hive", "") }}</td>
-            <td>{{ row.get("RegistryPath", "") }}</td>
-            <td>{{ row.get("ValueName", "") }}</td>
-            <td>{{ row.get("ValueData", "") }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <div class="card">
-      <h3>Services</h3>
-      <table>
-        <thead>
-          <tr><th>Name</th><th>State</th><th>Start Mode</th><th>Path</th></tr>
-        </thead>
-        <tbody>
-          {% for row in services[:100] %}
-          <tr>
-            <td>{{ row.get("Name", "") }}</td>
-            <td>{{ row.get("State", "") }}</td>
-            <td>{{ row.get("StartMode", "") }}</td>
-            <td>{{ row.get("PathName", "") or row.get("ExecutablePath", "") }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
 
-  <div id="network" class="section">
+    <h3>Scheduled Tasks</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>State</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td>{{ task.TaskPath }}{{ task.TaskName }}</td>
+          <td>{{ task.State }}</td>
+          <td>{{ task.Actions }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>Run Keys</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Hive</th>
+          <th>Registry Path</th>
+          <th>Value Name</th>
+          <th>Value Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in run_keys %}
+        <tr>
+          <td>{{ row.Hive }}</td>
+          <td>{{ row.RegistryPath }}</td>
+          <td>{{ row.ValueName }}</td>
+          <td>{{ row.ValueData }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>Services</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>State</th>
+          <th>Start Mode</th>
+          <th>Path</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for service in services %}
+        <tr>
+          <td>{{ service.Name }}</td>
+          <td>{{ service.State }}</td>
+          <td>{{ service.StartMode }}</td>
+          <td>{{ service.PathName or service.ExecutablePath }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section id="network">
     <h2>Network Review</h2>
-    <div class="card">
-      <h3>TCP Listeners</h3>
-      <table>
-        <thead>
-          <tr><th>Local Address</th><th>Local Port</th><th>Owning PID</th><th>Creation Time</th></tr>
-        </thead>
-        <tbody>
-          {% for row in tcp_listeners[:150] %}
-          <tr>
-            <td>{{ row.get("LocalAddress", "") }}</td>
-            <td>{{ row.get("LocalPort", "") }}</td>
-            <td>{{ row.get("OwningProcess", "") }}</td>
-            <td>{{ row.get("CreationTime", "") }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <p class="small">Generated by windows-dfir-evidence-ecosystem.</p>
+    <h3>TCP Listeners</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Local Address</th>
+          <th>Local Port</th>
+          <th>Owning PID</th>
+          <th>Creation Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in tcp_listeners %}
+        <tr>
+          <td>{{ row.LocalAddress }}</td>
+          <td>{{ row.LocalPort }}</td>
+          <td>{{ row.OwningProcess }}</td>
+          <td>{{ row.CreationTime }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section id="timeline">
+    <h2>Consolidated Timeline</h2>
+    <p><strong>Total rows:</strong> {{ timeline_count }}</p>
+    {% if timeline_rows %}
+    <table>
+      <thead>
+        <tr>
+          <th>TimestampUtc</th>
+          <th>Source</th>
+          <th>Category</th>
+          <th>Severity</th>
+          <th>Summary</th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in timeline_rows[:300] %}
+        <tr>
+          <td>{{ row.TimestampUtc }}</td>
+          <td>{{ row.Source }}</td>
+          <td>{{ row.Category }}</td>
+          <td>{{ row.Severity }}</td>
+          <td>{{ row.Summary }}</td>
+          <td>{{ row.Details }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="muted">No timeline rows generated.</p>
+    {% endif %}
+  </section>
+
+  <footer>
+    <p class="muted">Generated by windows-dfir-ecosystem.</p>
+  </footer>
 </body>
 </html>
