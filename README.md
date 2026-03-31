@@ -230,7 +230,7 @@ CASE-2026-0001-HOST01/
 ├── 09_findings/
 ├── 10_screenshots/
 ├── 11_reports/
-└── 99_share_with_chatgpt/
+└── 99_share
 ```
 
 ---
