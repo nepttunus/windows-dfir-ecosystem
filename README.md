@@ -1,34 +1,47 @@
 # Windows DFIR Evidence Ecosystem
 
-Windows-first forensic triage and reporting toolkit built for incident response, evidence preservation, and analyst-friendly reporting.
+Windows-first DFIR triage and reporting toolkit for incident response, evidence preservation, and analyst-friendly reporting.
 
-This repository gives you two operating modes:
+This project gives you two operating modes:
 
-1. **Standalone mode** — run a portable PowerShell collector on a Windows endpoint, then generate a report and screenshots locally.
-2. **Velociraptor mode** — use a custom Velociraptor artifact to run the same collector at scale, including in offline collector workflows.
+1. **Standalone mode**  
+   Run a portable PowerShell collector on a Windows endpoint and build a local forensic report.
+
+2. **Velociraptor mode**  
+   Use a custom Velociraptor artifact to run the same collector at scale, including offline collector workflows.
+
+---
 
 ## What it does
 
 - Collects Windows triage evidence into a structured case folder
 - Preserves hashes and basic chain-of-custody metadata
-- Exports key event logs (`Security`, `System`, `Application`, `PowerShell Operational`, `Defender Operational`, `TaskScheduler Operational`)
+- Exports key event logs:
+  - Security
+  - System
+  - Application
+  - PowerShell Operational
+  - Defender Operational
+  - TaskScheduler Operational
 - Collects:
   - system context
   - processes, services, drivers
   - scheduled tasks
-  - local users/groups
+  - local users and groups
   - network state
   - installed software
   - persistence locations
   - Microsoft Defender status and detections
-  - common user artefacts (Recent, Jump Lists, browser history files where accessible)
+  - common user artefacts
 - Builds:
   - `summary.json`
   - `findings.json`
   - `executive_summary.md`
   - `report.html`
   - optional `report.pdf`
-  - evidence screenshots (`PNG`) for reports
+  - screenshots for reports
+
+---
 
 ## Repository layout
 
@@ -36,88 +49,116 @@ This repository gives you two operating modes:
 collector/windows/                     PowerShell collector
 reporter/                             Python parsers + report generator
 velociraptor/artifacts/               Custom Velociraptor artifact YAML
-docs/                                 Architecture and operations notes
+docs/                                 Project documentation
 tests/                                Basic parser tests
-.github/workflows/                    GitHub Actions validation
-```
-
-## Quick start
-
-### 1) Collect evidence on a Windows host
+sample_case/                          Demo case for report validation
+.github/workflows/                    GitHub Actions
+Quick start
+1) Reporter setup on macOS / Linux
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip install pytest
+python -m playwright install chromium
+2) Validate the reporting pipeline
+python -m pytest
+python -m reporter.report_builder \
+  --case-path sample_case/CASE-DEMO-HOST01 \
+  --render-pdf \
+  --take-screenshots
+3) Open the demo report on macOS
+open sample_case/CASE-DEMO-HOST01/11_reports/report.html
+Manual evidence collection on Windows
 
 Open an elevated PowerShell console:
 
-```powershell
 Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process
 .\collector\windows\Invoke-DFIREvidenceCollector.ps1 `
   -CaseId CASE-2026-0001-HOST01 `
   -OutputRoot C:\DFIR `
   -Profile Incident `
   -MaxDays 14
-```
 
-This creates a case folder such as:
+Expected output:
 
-```text
 C:\DFIR\CASE-2026-0001-HOST01\
-```
-
-and, unless `-NoZip` is used, also:
-
-```text
 C:\DFIR\CASE-2026-0001-HOST01.zip
-```
-
-### 2) Build the report
-
-Create and activate a Python virtual environment, then install dependencies:
-
-```powershell
+Build a report from a real case
 python -m venv .venv
-. .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-playwright install chromium
-```
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m pip install pytest
+python -m playwright install chromium
 
-Generate the report:
-
-```powershell
 python -m reporter.report_builder `
   --case-path C:\DFIR\CASE-2026-0001-HOST01 `
   --render-pdf `
   --take-screenshots
-```
 
 Outputs are written under:
 
-```text
 C:\DFIR\CASE-2026-0001-HOST01\11_reports\
-```
+Velociraptor installation on macOS (Apple Silicon)
 
-## Velociraptor integration
+Create a working directory:
 
-The custom artifact in `velociraptor/artifacts/Custom.Windows.DFIR.EvidenceCollector.yaml` wraps the same collector script. Velociraptor artifacts can package VQL and external tools, and offline collectors can bundle required tools automatically. See the official Velociraptor documentation for artifact packaging, external tools, and offline collector creation. citeturn625741view0turn539791search1turn832275search0
+mkdir -p ~/tools/velociraptor
+cd ~/tools/velociraptor
 
-### Suggested workflow
+Download the binary:
 
-- Import the custom artifact into Velociraptor
-- Either:
-  - run it directly against endpoints, or
-  - include it in an offline collector build
-- Upload the resulting case ZIP or collection ZIP back to your evidence store / Velociraptor server
-- Use the Python reporter locally for enriched forensic reporting
+curl -L -o velociraptor https://github.com/Velocidex/velociraptor/releases/download/v0.76/velociraptor-v0.76.1-darwin-arm64
+chmod +x velociraptor
 
-## Operational notes
+Confirm the binary:
 
-- Run as local administrator whenever possible.
-- This tool is intended for **forensic triage and reporting**, not full dead-box acquisition.
-- `wevtutil` is used to export Windows event logs; Microsoft documents it for retrieving, querying, exporting, archiving, and clearing logs. citeturn625741view3
-- Microsoft documents `Get-MpThreatDetection` as a way to retrieve active and past Defender detections, which this toolkit uses for security context. citeturn625741view2
-- Rebuild Velociraptor offline collectors when your server is upgraded; the Velociraptor docs explicitly recommend rebuilding collectors to maintain compatibility and get fixes. citeturn832275search1turn832275search0
+./velociraptor version
 
-## Case folder layout
+Start the local GUI:
 
-```text
+./velociraptor gui
+
+This is the fastest way to learn the interface locally before deploying a real server/client setup.
+
+Velociraptor artifact integration
+
+The custom artifact is stored here:
+
+velociraptor/artifacts/Custom.Windows.DFIR.EvidenceCollector.yaml
+Important
+
+Update the url: value in the artifact so it points to the real GitHub raw path of your collector script.
+
+Expected pattern:
+
+https://raw.githubusercontent.com/<github-user>/<repo-name>/main/collector/windows/Invoke-DFIREvidenceCollector.ps1
+
+Example:
+
+https://raw.githubusercontent.com/nepttunus/windows-dfir-ecosystem/main/collector/windows/Invoke-DFIREvidenceCollector.ps1
+Import the artifact into Velociraptor
+Open the Velociraptor GUI
+Go to View Artifacts
+Click New Artifact
+Paste the full YAML content of:
+velociraptor/artifacts/Custom.Windows.DFIR.EvidenceCollector.yaml
+Save the artifact
+Launch against one Windows lab endpoint
+
+Use:
+
+CaseId = CASE-LAB-001
+Profile = Incident
+MaxDays = 14
+Recommended rollout
+Test manually on one Windows host
+Validate the report pipeline
+Import the artifact into Velociraptor
+Run it on one Windows lab endpoint
+Review uploads and returned files
+Only then scale to more endpoints
+Only after that move into offline collector workflows
+Case folder layout
 CASE-2026-0001-HOST01/
 ├── 00_case/
 ├── 01_system/
@@ -132,25 +173,25 @@ CASE-2026-0001-HOST01/
 ├── 10_screenshots/
 ├── 11_reports/
 └── 99_share_with_chatgpt/
-```
 
-## GitHub recommendations
 
-Recommended repo settings:
-
-- enable branch protection on `main`
-- require pull request review for detection logic changes
-- store large sample cases outside the repo
-- keep third-party binaries out of source control
-- use GitHub Releases for versioned collector packs
-
-## Limitations
-
-- Does not perform full memory capture
-- Does not replace forensic imaging
-- Browser and locked file collection depends on local permissions and file locks
-- Some evidence sources vary between Windows versions and EDR configurations
-
-## License
-
-MIT
+Operational notes
+Run as local administrator whenever possible
+This tool is intended for forensic triage and reporting, not full dead-box acquisition
+Browser and locked file collection depends on permissions and file locks
+Some artefact coverage varies by Windows version and EDR configuration
+Rebuild offline collectors after Velociraptor server upgrades or artifact changes
+Documentation
+Overview
+Local Usage
+Velociraptor Step by Step
+Offline Collector
+Troubleshooting
+GitHub recommendations
+Protect the main branch
+Require review for detection logic changes
+Keep large evidence samples outside the repo
+Do not store third-party binaries in source control
+Use GitHub Releases for packaged collector versions
+Limitations
+Does not
