@@ -11,3 +11,5 @@ output/
 case-output/
 
 backups/
+
+README.before_forensic_upgrade.md
