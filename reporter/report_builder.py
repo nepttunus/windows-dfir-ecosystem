@@ -8,6 +8,7 @@ from typing import Any
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from reporter.parsers import build_executive_summary, build_findings, collect_case_data
+from reporter.timeline import build_timeline, write_timeline_csv, write_timeline_json
 
 
 SEVERITY_ORDER = {"high": 3, "medium": 2, "low": 1}
@@ -40,7 +41,7 @@ def write_json(path: Path, data: Any) -> None:
 def render_screenshots_and_pdf(html_path: Path, screenshots_dir: Path, pdf_path: Path | None) -> None:
     try:
         from playwright.sync_api import sync_playwright
-    except Exception as exc:  # pragma: no cover - dependency/runtime gate
+    except Exception as exc:
         print(f"[!] Playwright unavailable, skipping screenshots/PDF: {exc}")
         return
 
@@ -76,7 +77,9 @@ def build_context(case_path: Path) -> dict[str, Any]:
     data = collect_case_data(case_path)
     findings = build_findings(data)
     findings_sorted = sorted(findings, key=lambda item: SEVERITY_ORDER.get(item.severity, 0), reverse=True)
+    findings_dict = [f.to_dict() for f in findings_sorted]
     executive_summary = build_executive_summary(data, findings_sorted)
+    timeline_rows = build_timeline(case_path, data, findings_dict)
 
     summary = data.get("summary") or {}
     context = {
@@ -86,7 +89,7 @@ def build_context(case_path: Path) -> dict[str, Any]:
         "collected_at_utc": summary.get("CollectedAtUtc", ""),
         "summary": summary,
         "computer_info": data.get("computer_info") or {},
-        "findings": [f.to_dict() for f in findings_sorted],
+        "findings": findings_dict,
         "executive_summary_markdown": executive_summary,
         "tasks": data.get("tasks") or [],
         "services": data.get("services") or [],
@@ -94,6 +97,8 @@ def build_context(case_path: Path) -> dict[str, Any]:
         "run_keys": data.get("run_keys") or [],
         "defender_status": data.get("defender_status") or {},
         "defender_threats": data.get("defender_threats") or [],
+        "timeline_rows": timeline_rows,
+        "timeline_count": len(timeline_rows),
     }
     return context
 
@@ -122,16 +127,24 @@ def main() -> None:
     write_json(findings_path, context["findings"])
     summary_md_path.write_text(context["executive_summary_markdown"], encoding="utf-8")
 
+    timeline_csv_path = case_path / "08_timeline" / "timeline.csv"
+    timeline_json_path = case_path / "08_timeline" / "timeline.json"
+    write_timeline_csv(timeline_csv_path, context["timeline_rows"])
+    write_timeline_json(timeline_json_path, context["timeline_rows"])
+
     share_summary = {
         "case_id": context["case_id"],
         "hostname": context["hostname"],
         "profile": context["profile"],
         "collected_at_utc": context["collected_at_utc"],
         "findings_count": len(context["findings"]),
+        "timeline_count": context["timeline_count"],
         "top_findings": context["findings"][:10],
     }
     write_json(dirs["share"] / "summary.json", share_summary)
     write_json(dirs["share"] / "findings.json", context["findings"])
+    write_timeline_csv(dirs["share"] / "timeline.csv", context["timeline_rows"])
+    write_timeline_json(dirs["share"] / "timeline.json", context["timeline_rows"])
 
     if args.take_screenshots or args.render_pdf:
         render_screenshots_and_pdf(
@@ -143,6 +156,8 @@ def main() -> None:
     print(f"[+] HTML report: {html_path}")
     print(f"[+] Findings JSON: {findings_path}")
     print(f"[+] Executive summary: {summary_md_path}")
+    print(f"[+] Timeline CSV: {timeline_csv_path}")
+    print(f"[+] Timeline JSON: {timeline_json_path}")
     if pdf_path:
         print(f"[+] PDF report: {pdf_path}")
 
